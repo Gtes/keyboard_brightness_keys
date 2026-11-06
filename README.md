@@ -2,11 +2,11 @@
 
 macOS utility that brings back **F5 / F6 keyboard backlight** control on modern MacBooks — without enabling “Use F1, F2, etc. keys as standard function keys.”
 
-| Key | Action |
-| --- | --- |
-| **F5** | Dim keyboard backlight |
-| **F6** | Brighten keyboard backlight |
-| **fn**+F5 / **fn**+F6 | Normal F5 / F6 |
+| Key                   | Action                      |
+| --------------------- | --------------------------- |
+| **F5**                | Dim keyboard backlight      |
+| **F6**                | Brighten keyboard backlight |
+| **fn**+F5 / **fn**+F6 | Normal F5 / F6              |
 
 Other function keys (brightness, volume, media, etc.) are unchanged.
 
@@ -27,6 +27,16 @@ Other function keys (brightness, volume, media, etc.) are unchanged.
 
 ## Install
 
+### Download (recommended)
+
+1. Grab the latest zip from [Releases](https://github.com/Gtes/keyboard_brightness_keys/releases).
+2. Unzip and move **Keyboard Brightness Keys.app** to Applications (or `~/Applications`).
+3. Open it. If Gatekeeper blocks it, right-click the app → **Open**.
+
+### Build from source
+
+If you prefer to compile it yourself:
+
 ```bash
 git clone https://github.com/Gtes/keyboard_brightness_keys.git
 cd keyboard_brightness_keys
@@ -34,7 +44,7 @@ cd keyboard_brightness_keys
 open ~/Applications/Keyboard\ Brightness\ Keys.app
 ```
 
-This builds and installs a single app:
+This builds and installs:
 
 - `~/Applications/Keyboard Brightness Keys.app` — Settings (Dock), with the background helper nested inside
 
