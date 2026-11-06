@@ -16,7 +16,7 @@ enum LoginItem {
         if enabled {
             guard let helper = HelperControl.helperURL() else {
                 throw NSError(domain: label, code: 1, userInfo: [
-                    NSLocalizedDescriptionKey: "\(AppIdentity.helperFile) not found next to Settings or in Applications.",
+                    NSLocalizedDescriptionKey: "\(AppIdentity.helperFile) not found inside Settings or in Applications.",
                 ])
             }
             let plist: [String: Any] = [

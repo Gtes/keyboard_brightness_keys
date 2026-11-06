@@ -34,10 +34,9 @@ cd keyboard_brightness_keys
 open ~/Applications/Keyboard\ Brightness\ Keys.app
 ```
 
-This builds and installs:
+This builds and installs a single app:
 
-- `~/Applications/Keyboard Brightness Keys.app` — Settings (Dock)
-- `~/Applications/Keyboard Brightness Keys Helper.app` — background helper (no Dock)
+- `~/Applications/Keyboard Brightness Keys.app` — Settings (Dock), with the background helper nested inside
 
 ## Usage
 
@@ -59,7 +58,7 @@ Sources/Shared/     config, HID remap, helper control
 Sources/Helper/     background helper + menu bar icon
 Sources/Settings/   settings UI
 Resources/Icon.png  app + menu bar icon
-build.sh            build & install both apps
+build.sh            build & install the single nested app
 ```
 
 ## License

@@ -151,8 +151,8 @@ final class SettingsWindow: NSWindowController {
         helperRow.spacing = 8
         root.addArrangedSubview(helperRow)
 
-        root.addArrangedSubview(tip("The helper has no Dock icon."))
-        root.addArrangedSubview(tip("This Settings app is only for configuration — quit it anytime; the helper keeps working."))
+        root.addArrangedSubview(tip("The helper lives inside this app and has no Dock icon."))
+        root.addArrangedSubview(tip("Quit this window anytime — the helper keeps working in the background."))
     }
 
     private func tip(_ text: String) -> NSTextField {

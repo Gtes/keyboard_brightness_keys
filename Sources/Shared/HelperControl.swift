@@ -6,11 +6,29 @@ enum HelperControl {
     }
 
     static func helperURL() -> URL? {
-        appURL(named: AppIdentity.helperFile)
+        let nested = Bundle.main.bundleURL
+            .appendingPathComponent("Contents/Library/LoginItems/\(AppIdentity.helperFile)")
+        if FileManager.default.fileExists(atPath: nested.path) {
+            return nested
+        }
+        return appURL(named: AppIdentity.helperFile)
     }
 
     static func settingsURL() -> URL? {
-        appURL(named: AppIdentity.settingsFile)
+        if Bundle.main.bundleIdentifier == AppIdentity.settingsID {
+            return Bundle.main.bundleURL
+        }
+        // Helper lives at …/Keyboard Brightness Keys.app/Contents/Library/LoginItems/Helper.app
+        let nestedParent = Bundle.main.bundleURL
+            .deletingLastPathComponent() // LoginItems
+            .deletingLastPathComponent() // Library
+            .deletingLastPathComponent() // Contents
+            .deletingLastPathComponent() // Settings.app
+        if nestedParent.lastPathComponent == AppIdentity.settingsFile,
+           FileManager.default.fileExists(atPath: nestedParent.path) {
+            return nestedParent
+        }
+        return appURL(named: AppIdentity.settingsFile)
     }
 
     @discardableResult

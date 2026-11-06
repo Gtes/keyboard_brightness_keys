@@ -34,7 +34,7 @@ make_icns() {
   rm -rf build/AppIcon.iconset
 }
 
-build_app() {
+fill_app() {
   local name="$1"
   local exec="$2"
   local plist="$3"
@@ -53,19 +53,29 @@ build_app() {
   cp Resources/Icon.png "$app/Contents/Resources/Icon.png"
   make_icns "$app/Contents/Resources/AppIcon.icns"
   chmod +x "$app/Contents/MacOS/$exec"
-  codesign --force --sign - "$app"
-  rm -rf "$DEST_DIR/$app"
-  cp -R "$app" "$DEST_DIR/$app"
-  codesign --force --sign - "$DEST_DIR/$app"
-  rm -rf "$app"
-  /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$DEST_DIR/$app" >/dev/null 2>&1 || true
-  echo "Installed $DEST_DIR/$app"
 }
 
-build_app "$HELPER_APP" "KeyboardBrightnessKeysHelper" "Helper-Info.plist" \
+# Build helper, then nest it inside Settings so users only install one .app
+fill_app "$HELPER_APP" "KeyboardBrightnessKeysHelper" "Helper-Info.plist" \
   Sources/Shared/*.swift Sources/Helper/*.swift
 
-build_app "$SETTINGS_APP" "KeyboardBrightnessKeys" "Settings-Info.plist" \
+fill_app "$SETTINGS_APP" "KeyboardBrightnessKeys" "Settings-Info.plist" \
   Sources/Shared/*.swift Sources/Settings/*.swift
 
+mkdir -p "${SETTINGS_APP}.app/Contents/Library/LoginItems"
+rm -rf "${SETTINGS_APP}.app/Contents/Library/LoginItems/${HELPER_APP}.app"
+mv "${HELPER_APP}.app" "${SETTINGS_APP}.app/Contents/Library/LoginItems/${HELPER_APP}.app"
+
+codesign --force --deep --sign - "${SETTINGS_APP}.app"
+
+rm -rf "$DEST_DIR/${SETTINGS_APP}.app" "$DEST_DIR/${HELPER_APP}.app"
+cp -R "${SETTINGS_APP}.app" "$DEST_DIR/${SETTINGS_APP}.app"
+codesign --force --deep --sign - "$DEST_DIR/${SETTINGS_APP}.app"
+rm -rf "${SETTINGS_APP}.app"
+
+/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f \
+  "$DEST_DIR/${SETTINGS_APP}.app" >/dev/null 2>&1 || true
+
+echo "Installed $DEST_DIR/${SETTINGS_APP}.app"
+echo "Helper nested at Contents/Library/LoginItems/${HELPER_APP}.app"
 echo "Done: open \"$DEST_DIR/${SETTINGS_APP}.app\""
