@@ -10,15 +10,16 @@ final class SettingsAppDelegate: NSObject, NSApplicationDelegate {
     private var window: SettingsWindow?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        if alreadyRunning {
+        if isDuplicateInstance {
             DistributedNotificationCenter.default().postNotificationName(
-                Note.openSettings,
+                AppIdentity.Note.openSettings,
                 object: nil,
                 userInfo: nil,
                 deliverImmediately: true
             )
-            usleep(150_000)
-            NSApp.terminate(nil)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                NSApp.terminate(nil)
+            }
             return
         }
 
@@ -29,7 +30,9 @@ final class SettingsAppDelegate: NSObject, NSApplicationDelegate {
         window.show()
 
         DistributedNotificationCenter.default().addObserver(
-            forName: Note.openSettings, object: nil, queue: .main
+            forName: AppIdentity.Note.openSettings,
+            object: nil,
+            queue: .main
         ) { [weak self] _ in
             self?.window?.show()
         }
@@ -44,40 +47,56 @@ final class SettingsAppDelegate: NSObject, NSApplicationDelegate {
         true
     }
 
-    private var alreadyRunning: Bool {
-        NSRunningApplication.runningApplications(withBundleIdentifier: AppID.settings)
+    private var isDuplicateInstance: Bool {
+        NSRunningApplication.runningApplications(withBundleIdentifier: AppIdentity.settingsID)
             .contains { $0.processIdentifier != ProcessInfo.processInfo.processIdentifier }
     }
 }
 
 final class SettingsWindow: NSWindowController {
-    private let statusLabel = NSTextField(labelWithString: "")
     private let helperLabel = NSTextField(labelWithString: "")
-    private let enabledButton = NSButton(checkboxWithTitle: "Enabled (F5 dims, F6 brightens keyboard)", target: nil, action: nil)
-    private let iconButton = NSButton(checkboxWithTitle: "Show icon in menu bar", target: nil, action: nil)
-    private let loginButton = NSButton(checkboxWithTitle: "Start helper at login", target: nil, action: nil)
+    private let statusLabel = NSTextField(labelWithString: "")
+    private let enabledButton = NSButton(
+        checkboxWithTitle: "Enabled (F5 dims, F6 brightens keyboard)",
+        target: nil,
+        action: nil
+    )
+    private let iconButton = NSButton(
+        checkboxWithTitle: "Show icon in menu bar",
+        target: nil,
+        action: nil
+    )
+    private let loginButton = NSButton(
+        checkboxWithTitle: "Start helper at login",
+        target: nil,
+        action: nil
+    )
+    private var statusTimer: Timer?
 
     init() {
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 420, height: 290),
+            contentRect: NSRect(x: 0, y: 0, width: 420, height: 280),
             styleMask: [.titled, .closable, .miniaturizable],
             backing: .buffered,
             defer: false
         )
-        window.title = "Keyboard Brightness Keys"
+        window.title = AppIdentity.name
         window.center()
         window.isReleasedWhenClosed = false
         super.init(window: window)
         buildUI()
         refresh()
-
-        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+        statusTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             self?.refreshHelperStatus()
         }
     }
 
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError() }
+
+    deinit {
+        statusTimer?.invalidate()
+    }
 
     func show() {
         refresh()
@@ -87,6 +106,7 @@ final class SettingsWindow: NSWindowController {
 
     private func buildUI() {
         guard let content = window?.contentView else { return }
+
         let root = NSStackView()
         root.orientation = .vertical
         root.alignment = .leading
@@ -100,7 +120,7 @@ final class SettingsWindow: NSWindowController {
             root.bottomAnchor.constraint(lessThanOrEqualTo: content.bottomAnchor, constant: -20),
         ])
 
-        let title = NSTextField(labelWithString: "Keyboard Brightness Keys")
+        let title = NSTextField(labelWithString: AppIdentity.name)
         title.font = .systemFont(ofSize: 17, weight: .semibold)
         root.addArrangedSubview(title)
 
@@ -131,17 +151,16 @@ final class SettingsWindow: NSWindowController {
         helperRow.spacing = 8
         root.addArrangedSubview(helperRow)
 
-        let tip1 = NSTextField(wrappingLabelWithString: "The helper has no Dock icon.")
-        tip1.font = .systemFont(ofSize: 11)
-        tip1.textColor = .secondaryLabelColor
-        tip1.preferredMaxLayoutWidth = 380
-        root.addArrangedSubview(tip1)
+        root.addArrangedSubview(tip("The helper has no Dock icon."))
+        root.addArrangedSubview(tip("This Settings app is only for configuration — quit it anytime; the helper keeps working."))
+    }
 
-        let tip2 = NSTextField(wrappingLabelWithString: "This Settings app is only for configuration — quit it anytime; the helper keeps working.")
-        tip2.font = .systemFont(ofSize: 11)
-        tip2.textColor = .secondaryLabelColor
-        tip2.preferredMaxLayoutWidth = 380
-        root.addArrangedSubview(tip2)
+    private func tip(_ text: String) -> NSTextField {
+        let field = NSTextField(wrappingLabelWithString: text)
+        field.font = .systemFont(ofSize: 11)
+        field.textColor = .secondaryLabelColor
+        field.preferredMaxLayoutWidth = 380
+        return field
     }
 
     private func refresh() {
@@ -156,7 +175,7 @@ final class SettingsWindow: NSWindowController {
 
     private func refreshHelperStatus() {
         if HelperControl.isRunning {
-            helperLabel.stringValue = "Helper: running (no Dock icon)"
+            helperLabel.stringValue = "Helper: running"
             helperLabel.textColor = .systemGreen
         } else {
             helperLabel.stringValue = "Helper: not running"
@@ -176,7 +195,7 @@ final class SettingsWindow: NSWindowController {
 
     @objc private func startHelper() {
         _ = HelperControl.ensureRunning()
-        Config.ping()
+        Config.notify()
         refresh()
     }
 

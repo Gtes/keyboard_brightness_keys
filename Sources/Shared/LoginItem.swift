@@ -1,7 +1,8 @@
 import Foundation
 
 enum LoginItem {
-    private static let label = "com.fkeysremap.brightnesskeys.helper"
+    private static let label = AppIdentity.helperID
+
     private static var plistURL: URL {
         URL(fileURLWithPath: NSHomeDirectory())
             .appendingPathComponent("Library/LaunchAgents/\(label).plist")
@@ -15,7 +16,7 @@ enum LoginItem {
         if enabled {
             guard let helper = HelperControl.helperURL() else {
                 throw NSError(domain: label, code: 1, userInfo: [
-                    NSLocalizedDescriptionKey: "Keyboard Brightness Keys Helper.app not found in Applications",
+                    NSLocalizedDescriptionKey: "\(AppIdentity.helperFile) not found next to Settings or in Applications.",
                 ])
             }
             let plist: [String: Any] = [
@@ -29,22 +30,16 @@ enum LoginItem {
                 withIntermediateDirectories: true
             )
             try data.write(to: plistURL)
-            _ = run("/bin/launchctl", ["load", "-w", plistURL.path])
+            _ = Shell.run("/bin/launchctl", ["unload", "-w", plistURL.path])
+            let status = Shell.run("/bin/launchctl", ["load", "-w", plistURL.path]).status
+            if status != 0 {
+                throw NSError(domain: label, code: Int(status), userInfo: [
+                    NSLocalizedDescriptionKey: "launchctl could not load the login item.",
+                ])
+            }
         } else {
-            _ = run("/bin/launchctl", ["unload", "-w", plistURL.path])
+            _ = Shell.run("/bin/launchctl", ["unload", "-w", plistURL.path])
             try? FileManager.default.removeItem(at: plistURL)
         }
-    }
-
-    @discardableResult
-    private static func run(_ path: String, _ args: [String]) -> Int32 {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: path)
-        process.arguments = args
-        process.standardOutput = Pipe()
-        process.standardError = Pipe()
-        do { try process.run() } catch { return 1 }
-        process.waitUntilExit()
-        return process.terminationStatus
     }
 }

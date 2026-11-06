@@ -3,33 +3,43 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 DEST_DIR="${HOME}/Applications"
+SETTINGS_APP="Keyboard Brightness Keys"
+HELPER_APP="Keyboard Brightness Keys Helper"
+
 mkdir -p "$DEST_DIR" build
 
-killall -9 \
-  BrightnessKeys BrightnessKeysAgent BrightnessKeysHelper BrightnessKeysSettings \
-  KeyboardBrightnessKeys KeyboardBrightnessKeysHelper \
-  2>/dev/null || true
+if [[ ! -f Resources/Icon.png ]]; then
+  echo "Missing Resources/Icon.png" >&2
+  exit 1
+fi
+
+killall -9 KeyboardBrightnessKeys KeyboardBrightnessKeysHelper 2>/dev/null || true
 
 rm -rf \
-  "$DEST_DIR/Brightness Keys.app" \
-  "$DEST_DIR/Brightness Keys Agent.app" \
-  "$DEST_DIR/Brightness Keys Helper.app" \
-  "$DEST_DIR/Keyboard Brightness Keys.app" \
-  "$DEST_DIR/Keyboard Brightness Keys Helper.app" \
-  "./Brightness Keys.app" \
-  "./Brightness Keys Helper.app" \
-  "./Keyboard Brightness Keys.app" \
-  "./Keyboard Brightness Keys Helper.app"
+  "$DEST_DIR/${SETTINGS_APP}.app" \
+  "$DEST_DIR/${HELPER_APP}.app" \
+  "./${SETTINGS_APP}.app" \
+  "./${HELPER_APP}.app"
 
-swiftc -target arm64-apple-macosx14.0 -swift-version 5 -framework Cocoa \
-  Scripts/make-icon.swift -o build/make-icon
+make_icns() {
+  local out="$1"
+  rm -rf build/AppIcon.iconset
+  mkdir -p build/AppIcon.iconset
+  for size in 16 32 128 256 512; do
+    sips -z $size $size Resources/Icon.png --out "build/AppIcon.iconset/icon_${size}x${size}.png" >/dev/null
+    double=$((size * 2))
+    sips -z $double $double Resources/Icon.png --out "build/AppIcon.iconset/icon_${size}x${size}@2x.png" >/dev/null
+  done
+  iconutil -c icns build/AppIcon.iconset -o "$out"
+  rm -rf build/AppIcon.iconset
+}
 
 build_app() {
   local name="$1"
   local exec="$2"
   local plist="$3"
   shift 3
-  local app="$name.app"
+  local app="${name}.app"
   rm -rf "$app"
   mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
   swiftc \
@@ -40,7 +50,8 @@ build_app() {
     "$@" \
     -o "$app/Contents/MacOS/$exec"
   cp "$plist" "$app/Contents/Info.plist"
-  ./build/make-icon "$app/Contents/Resources/AppIcon.icns"
+  cp Resources/Icon.png "$app/Contents/Resources/Icon.png"
+  make_icns "$app/Contents/Resources/AppIcon.icns"
   chmod +x "$app/Contents/MacOS/$exec"
   codesign --force --sign - "$app"
   rm -rf "$DEST_DIR/$app"
@@ -51,11 +62,10 @@ build_app() {
   echo "Installed $DEST_DIR/$app"
 }
 
-build_app "Keyboard Brightness Keys Helper" "KeyboardBrightnessKeysHelper" "Helper-Info.plist" \
+build_app "$HELPER_APP" "KeyboardBrightnessKeysHelper" "Helper-Info.plist" \
   Sources/Shared/*.swift Sources/Helper/*.swift
 
-build_app "Keyboard Brightness Keys" "KeyboardBrightnessKeys" "Settings-Info.plist" \
+build_app "$SETTINGS_APP" "KeyboardBrightnessKeys" "Settings-Info.plist" \
   Sources/Shared/*.swift Sources/Settings/*.swift
 
-echo "Done:"
-echo "  open \"$DEST_DIR/Keyboard Brightness Keys.app\""
+echo "Done: open \"$DEST_DIR/${SETTINGS_APP}.app\""
