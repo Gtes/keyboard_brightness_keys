@@ -1,56 +1,69 @@
 # Keyboard Brightness Keys
 
-Restore **F5 / F6 keyboard backlight** control on modern MacBooks — the same behavior older MacBooks had — without turning on “Use F1, F2, etc. keys as standard function keys.”
+macOS utility that brings back **F5 / F6 keyboard backlight** control on modern MacBooks — without enabling “Use F1, F2, etc. keys as standard function keys.”
 
-F5 dims the keyboard backlight. F6 brightens it. Other function keys stay as they are. Hold **fn** for a normal F5 or F6.
+| Key | Action |
+| --- | --- |
+| **F5** | Dim keyboard backlight |
+| **F6** | Brighten keyboard backlight |
+| **fn**+F5 / **fn**+F6 | Normal F5 / F6 |
+
+Other function keys (brightness, volume, media, etc.) are unchanged.
 
 ![Settings](screenshots/settings.png)
 
-> Replace `screenshots/settings.png` with a real capture of the Settings window (and optionally the menu bar icon).
+## Features
 
-## Apps
+- Restores classic MacBook keyboard-backlight keys on F5 / F6
+- Leaves the rest of the function row alone
+- Optional menu bar icon
+- Optional start-at-login for the background helper
+- Settings app you can quit anytime — the helper keeps running
 
-| App | Role |
-| --- | --- |
-| **Keyboard Brightness Keys** | Settings (Dock). Configure and start/stop the helper. |
-| **Keyboard Brightness Keys Helper** | Background helper (no Dock). Applies the F5/F6 remap. |
+## Requirements
 
-Quit Settings anytime — the helper keeps running.
+- macOS 14 or later
+- Apple Silicon MacBook (built for `arm64`)
 
 ## Install
 
 ```bash
+git clone https://github.com/Gtes/keyboard_brightness_keys.git
+cd keyboard_brightness_keys
 ./build.sh
 open ~/Applications/Keyboard\ Brightness\ Keys.app
 ```
 
-Requires macOS 14+ (Apple Silicon build).
+This builds and installs:
+
+- `~/Applications/Keyboard Brightness Keys.app` — Settings (Dock)
+- `~/Applications/Keyboard Brightness Keys Helper.app` — background helper (no Dock)
 
 ## Usage
 
-1. Open **Keyboard Brightness Keys** from `~/Applications`.
-2. Leave **Enabled** on.
-3. Optionally show the menu bar icon, or start the helper at login.
-4. Press **F5** / **F6** to change keyboard backlight.
+1. Open **Keyboard Brightness Keys**.
+2. Keep **Enabled** checked.
+3. Optionally enable **Show icon in menu bar** and **Start helper at login**.
+4. Press **F5** / **F6** to adjust keyboard backlight.
+
+Use **Start Helper** / **Stop Helper** if you need to restart the background process.
 
 ## How it works
 
-On current MacBook Pros, bare F5/F6 send Dictation and Focus HID usages. The helper remaps those usages to keyboard illumination down/up via `hidutil`, matching the 2015-era backlight keys.
+On recent MacBook Pros, pressing F5 / F6 alone sends Dictation and Focus HID usages. The helper remaps those usages to keyboard illumination down / up with `hidutil`, the same backlight controls older MacBooks exposed on those keys.
 
-## Development
+## Project layout
 
-```
-Sources/Shared/     identity, config, HID remap, helper control
-Sources/Helper/     background agent + menu bar icon
+```text
+Sources/Shared/     config, HID remap, helper control
+Sources/Helper/     background helper + menu bar icon
 Sources/Settings/   settings UI
-Resources/Icon.png  menu bar + app icon source
-build.sh            builds and installs both apps
-```
-
-```bash
-./build.sh
+Resources/Icon.png  app + menu bar icon
+build.sh            build & install both apps
 ```
 
 ## License
 
-Private / unpublished unless you add a license.
+Released under the [MIT License](LICENSE).
+
+Copyright © 2026 SK ([@Gtes](https://github.com/Gtes))
