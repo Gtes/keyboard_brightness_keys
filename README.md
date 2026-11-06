@@ -61,6 +61,10 @@ Resources/Icon.png  app + menu bar icon
 build.sh            build & install the single nested app
 ```
 
+## AI disclosure
+
+This project’s code was generated with **Cursor (Composer)** and then reviewed, tested, and verified by a human. Treat it like any other third-party utility: skim the source before running it if that matters to you.
+
 ## License
 
 Released under the [MIT License](LICENSE).
